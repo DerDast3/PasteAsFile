@@ -9,6 +9,7 @@ using System.Drawing.Imaging;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
@@ -30,10 +31,10 @@ namespace PasteAsFile
         }
         private void frmMain_Load(object sender, EventArgs e)
         {
-            txtFilename.Text = DateTime.Now.ToString("dd-MM-yyyy HH-mm");
+            txtFilename.Text = DateTime.Now.ToString("dd-MM-yyyy HH-mm-ss");
             txtCurrentLocation.Text = CurrentLocation ?? @"C:\";
 
-            if (Registry.GetValue(@"HKEY_CLASSES_ROOT\Directory\Background\shell\Paste As File\command", "", null) == null)
+            if (Registry.GetValue(@"HKEY_CURRENT_USER\Software\Classes\Directory\Background\shell\Paste As File\command", "", null) == null)
             {
                 if (MessageBox.Show("Seems that you are running this application for the first time,\nDo you want to Register it with your system Context Menu ?", "Paste As File", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes)
                 {
@@ -43,10 +44,20 @@ namespace PasteAsFile
 
             if (Clipboard.ContainsText())
             {
-                lblType.Text = "Text File";
-                comExt.SelectedItem = "txt";
+                string clipboardText = Clipboard.GetText();
                 IsText = true;
-                txtContent.Text = Clipboard.GetText();
+                txtContent.Text = clipboardText;
+
+                if (LooksLikeMarkdown(clipboardText))
+                {
+                    lblType.Text = "Markdown File";
+                    comExt.SelectedItem = "md";
+                }
+                else
+                {
+                    lblType.Text = "Text File";
+                    comExt.SelectedItem = "txt";
+                }
                 return;
             }
 
@@ -62,6 +73,53 @@ namespace PasteAsFile
             btnSave.Enabled = false;
             
             
+        }
+
+        private static bool LooksLikeMarkdown(string text)
+        {
+            if (string.IsNullOrWhiteSpace(text))
+                return false;
+
+            string[] lines = text.Replace("\r\n", "\n").Split('\n');
+            int score = 0;
+            int nonEmptyLines = 0;
+
+            foreach (string line in lines)
+            {
+                string trimmed = line.TrimStart();
+                if (trimmed.Length == 0)
+                    continue;
+
+                nonEmptyLines++;
+
+                if (Regex.IsMatch(trimmed, @"^#{1,6}\s+\S"))
+                    score += 3;
+                else if (Regex.IsMatch(trimmed, @"^```"))
+                    score += 3;
+                else if (Regex.IsMatch(trimmed, @"^[-*+]\s+\[[ xX]\]\s+\S"))
+                    score += 3;
+                else if (Regex.IsMatch(trimmed, @"^(-{3,}|\*{3,}|_{3,})\s*$"))
+                    score += 2;
+                else if (Regex.IsMatch(trimmed, @"^>\s?\S"))
+                    score += 2;
+                else if (Regex.IsMatch(trimmed, @"^[-*+]\s+\S"))
+                    score += 1;
+                else if (Regex.IsMatch(trimmed, @"^\d+[.)]\s+\S"))
+                    score += 1;
+                else if (Regex.IsMatch(trimmed, @"^\|.*\|\s*$"))
+                    score += 2;
+            }
+
+            if (Regex.IsMatch(text, @"!\[[^\]]*\]\([^)]+\)"))
+                score += 2;
+            if (Regex.IsMatch(text, @"\[[^\]]+\]\([^)]+\)"))
+                score += 2;
+            if (Regex.IsMatch(text, @"\*\*[^*\n]+\*\*"))
+                score += 2;
+            if (Regex.IsMatch(text, @"`[^`\n]+`"))
+                score += 1;
+
+            return score >= Math.Max(3, nonEmptyLines / 2);
         }
 
         private void btnSave_Click(object sender, EventArgs e)
@@ -121,19 +179,21 @@ namespace PasteAsFile
 
         private void lblWebsite_Click(object sender, EventArgs e)
         {
-            Process.Start("http://eslamx.com");
+            Process.Start(new ProcessStartInfo("http://eslamx.com") { UseShellExecute = true });
         }
 
         private void lblMe_Click(object sender, EventArgs e)
         {
-            Process.Start("http://twitter.com/EslaMx7");
+            Process.Start(new ProcessStartInfo("https://github.com/DerDast3/PasteAsFile") { UseShellExecute = true });
         }
 
         private void lblHelp_Click(object sender, EventArgs e)
         {
-            string msg = "Paste As File helps you paste any text or images in your system clipboard into a file directly instead of creating new file yourslef";
-            msg += "\n--------------------\nTo Register the application to your system Context Menu run the program as Administrator with this argument : /reg";
+            string msg = "Paste As File helps you paste any text or images in your system clipboard into a file directly instead of creating new file yourself";
+            msg += "\n--------------------\nTo Register the application to your system Context Menu (per user, no administrator rights needed) run the application with this argument : /reg";
             msg += "\nto Unregister the application use this argument : /unreg\n";
+            msg += "\n--------------------\nMarkdown content is detected automatically and offered as .md\n";
+            msg += "\n--------------------\nEnhanced fork by madeByDast : https://github.com/DerDast3/PasteAsFile\n";
             msg += "\n--------------------\nSend Feedback to : EslaMx7@Gmail.Com\n\nThanks :)";
             MessageBox.Show(msg,"Paste As File Help",MessageBoxButtons.OK,MessageBoxIcon.Information);
 

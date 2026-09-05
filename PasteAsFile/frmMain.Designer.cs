@@ -102,6 +102,7 @@
             this.comExt.FormattingEnabled = true;
             this.comExt.Items.AddRange(new object[] {
             "txt",
+            "md",
             "html",
             "js",
             "css",
@@ -167,7 +168,7 @@
             this.lblMe.Name = "lblMe";
             this.lblMe.Size = new System.Drawing.Size(122, 13);
             this.lblMe.TabIndex = 12;
-            this.lblMe.Text = "© Eslam Hamouda 2014";
+            this.lblMe.Text = "madeByDast";
             this.lblMe.Click += new System.EventHandler(this.lblMe_Click);
             // 
             // lblWebsite

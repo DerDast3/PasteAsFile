@@ -43,10 +43,10 @@ namespace PasteAsFile
         {
             try
             {
-                var key = Registry.ClassesRoot.OpenSubKey("Directory").OpenSubKey("Background").OpenSubKey("shell",true);
+                var key = OpenDirectoryKey().OpenSubKey(@"Background\shell", true);
                 key.DeleteSubKeyTree("Paste As File");
 
-                key = Registry.ClassesRoot.OpenSubKey("Directory").OpenSubKey("shell", true);
+                key = OpenDirectoryKey().OpenSubKey("shell", true);
                 key.DeleteSubKeyTree("Paste As File");
 
                 MessageBox.Show("Application has been Unregistered from your system", "Paste As File", MessageBoxButtons.OK, MessageBoxIcon.Information);
@@ -54,8 +54,8 @@ namespace PasteAsFile
             }
             catch (Exception ex)
             {
-                MessageBox.Show(ex.Message + "\nPlease run the application as Administrator !", "Paste As File", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                
+                MessageBox.Show(ex.Message + "\nPlease check your permissions !", "Paste As File", MessageBoxButtons.OK, MessageBoxIcon.Error);
+
             }
         }
 
@@ -63,11 +63,11 @@ namespace PasteAsFile
         {
             try
             {
-                var key = Registry.ClassesRoot.OpenSubKey("Directory").OpenSubKey("Background").OpenSubKey("shell",true).CreateSubKey("Paste As File");
+                var key = OpenDirectoryKey().CreateSubKey(@"Background\shell").CreateSubKey("Paste As File");
                 key = key.CreateSubKey("command");
                 key.SetValue("", Application.ExecutablePath + " \"%V\"");
 
-                key = Registry.ClassesRoot.OpenSubKey("Directory").OpenSubKey("shell",true).CreateSubKey("Paste As File");
+                key = OpenDirectoryKey().CreateSubKey("shell").CreateSubKey("Paste As File");
                 key = key.CreateSubKey("command");
                 key.SetValue("", Application.ExecutablePath + " \"%1\"");
                 MessageBox.Show("Application has been registered with your system", "Paste As File", MessageBoxButtons.OK, MessageBoxIcon.Information);
@@ -76,7 +76,7 @@ namespace PasteAsFile
             catch (Exception ex)
             {
                 //throw;
-                MessageBox.Show(ex.Message + "\nPlease run the application as Administrator !", "Paste As File", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show(ex.Message + "\nPlease check your permissions !", "Paste As File", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 
@@ -99,6 +99,11 @@ namespace PasteAsFile
                 return;
             }
             Application.Exit();
+        }
+
+        private static RegistryKey OpenDirectoryKey()
+        {
+            return Registry.CurrentUser.CreateSubKey(@"Software\Classes\Directory");
         }
     }
 }
